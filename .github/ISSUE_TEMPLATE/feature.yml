@@ -1,0 +1,27 @@
+name: "✨ Feature"
+description: "새로운 기능 추가"
+labels: ["Feature"]
+title: "[BE/FE] "
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 기능 추가 배경
+      description: 왜 이 기능이 필요한가요?
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: 기능 상세 설명
+      description: 구체적으로 어떻게 동작해야 하나요?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: 참고 자료
+    validations:
+      required: false
