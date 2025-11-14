@@ -91,7 +91,10 @@ docker run -d \
   -p ${NEW_PORT}:8080 \
   -v /home/ubuntu/aws_motionit_private_key.pem:/app/aws_motionit_private_key.pem:ro \
   -e SPRING_PROFILES_ACTIVE=prod \
-  -e DATABASE_URL="${DATABASE_URL}" \
+  -e SPRING_DATASOURCE_URL="${DATABASE_URL}" \
+  -e SPRING_DATASOURCE_USERNAME="${DB_USERNAME}" \
+  -e SPRING_DATASOURCE_PASSWORD="${DB_PASSWORD}" \
+  -e SPRING_DATASOURCE_DRIVER_CLASS_NAME="com.mysql.cj.jdbc.Driver" \
   -e DB_USERNAME="${DB_USERNAME}" \
   -e DB_PASSWORD="${DB_PASSWORD}" \
   -e AWS_ACCESS_KEY="${AWS_ACCESS_KEY}" \
