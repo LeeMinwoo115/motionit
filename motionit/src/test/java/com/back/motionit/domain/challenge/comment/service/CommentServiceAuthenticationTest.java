@@ -30,7 +30,6 @@ import com.back.motionit.domain.challenge.comment.entity.Comment;
 import com.back.motionit.domain.challenge.comment.moderation.CommentModeration;
 import com.back.motionit.domain.challenge.comment.repository.CommentRepository;
 import com.back.motionit.domain.challenge.like.repository.CommentLikeRepository;
-import com.back.motionit.domain.challenge.like.entity.CommentLike;
 import com.back.motionit.domain.challenge.like.service.CommentLikeService;
 import com.back.motionit.domain.challenge.room.entity.ChallengeRoom;
 import com.back.motionit.domain.challenge.room.repository.ChallengeRoomRepository;
