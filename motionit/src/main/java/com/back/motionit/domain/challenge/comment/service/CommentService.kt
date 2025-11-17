@@ -7,6 +7,7 @@ import com.back.motionit.domain.challenge.comment.entity.Comment
 import com.back.motionit.domain.challenge.comment.moderation.CommentModeration
 import com.back.motionit.domain.challenge.comment.repository.CommentRepository
 import com.back.motionit.domain.challenge.like.repository.CommentLikeRepository
+import com.back.motionit.domain.challenge.like.service.CommentLikeService
 import com.back.motionit.domain.challenge.room.entity.ChallengeRoom
 import com.back.motionit.domain.challenge.room.repository.ChallengeRoomRepository
 import com.back.motionit.domain.challenge.validator.ChallengeAuthValidator
@@ -26,6 +27,7 @@ class CommentService(
     private val challengeRoomRepository: ChallengeRoomRepository,
     private val userRepository: UserRepository,
     private val commentLikeRepository: CommentLikeRepository,
+    private val commentLikeService: CommentLikeService,
     private val commentModeration: CommentModeration,
     private val challengeAuthValidator: ChallengeAuthValidator,
 ) {
@@ -55,11 +57,9 @@ class CommentService(
 
         val room: ChallengeRoom = challengeRoomRepository.findById(roomId)
             .orElseThrow { BusinessException(CommentErrorCode.ROOM_NOT_FOUND) }
-            ?: throw BusinessException(CommentErrorCode.ROOM_NOT_FOUND)
 
         val author: User = userRepository.findById(userId)
             .orElseThrow { BusinessException(CommentErrorCode.USER_NOT_FOUND) }
-            ?: throw BusinessException(CommentErrorCode.USER_NOT_FOUND)
 
         commentModeration.assertClean(req.content)
 
@@ -84,7 +84,6 @@ class CommentService(
 
         val user: User = userRepository.findById(userId)
             .orElseThrow { BusinessException(CommentErrorCode.USER_NOT_FOUND) }
-            ?: throw BusinessException(CommentErrorCode.USER_NOT_FOUND)
 
         val pageable: Pageable = PageRequest.of(page, size)
         val comments: Page<Comment> =
@@ -94,14 +93,15 @@ class CommentService(
             return comments.map { CommentRes.from(it, false) }
         }
 
-        val commentIds: List<Long> = comments.content
-            .map { it.id!! }   // 저장된 댓글이라면 id는 반드시 존재
+
+        val commentIds: List<Long> = comments.content.map { requireNotNull(it.id) }
+
 
         val likedCommentIds: Set<Long> =
-            commentLikeRepository.findLikedCommentIdsSafely(user, commentIds)
+            commentLikeService.findLikedCommentIdsSafely(user, commentIds)
 
         return comments.map { c ->
-            val isLiked = likedCommentIds.contains(c.id)
+            val isLiked = c.id?.let { likedCommentIds.contains(it) } ?: false
             CommentRes.from(c, isLiked)
         }
     }
@@ -118,6 +118,7 @@ class CommentService(
         comment.edit(req.content)
 
         val user = userRepository.getReferenceById(userId)
+
         val isLiked = commentLikeRepository.existsByCommentAndUser(comment, user)
 
         return CommentRes.from(comment, isLiked)
@@ -132,6 +133,7 @@ class CommentService(
         assertOwnerOrThrow(comment, userId)
 
         comment.softDelete()
+
         commentLikeRepository.deleteAllByComment(comment)
 
         return CommentRes.from(comment, false)

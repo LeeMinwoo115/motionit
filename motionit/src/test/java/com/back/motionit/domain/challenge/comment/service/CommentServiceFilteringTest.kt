@@ -6,6 +6,7 @@ import com.back.motionit.domain.challenge.comment.entity.Comment
 import com.back.motionit.domain.challenge.comment.moderation.CommentModeration
 import com.back.motionit.domain.challenge.comment.repository.CommentRepository
 import com.back.motionit.domain.challenge.like.repository.CommentLikeRepository
+import com.back.motionit.domain.challenge.like.service.CommentLikeService
 import com.back.motionit.domain.challenge.participant.entity.ChallengeParticipant
 import com.back.motionit.domain.challenge.room.entity.ChallengeRoom
 import com.back.motionit.domain.challenge.room.repository.ChallengeRoomRepository
@@ -39,6 +40,9 @@ class CommentServiceFilteringTest {
 
     @Mock
     private lateinit var userRepository: UserRepository
+
+    @Mock
+    lateinit var commentLikeService: CommentLikeService
 
     @Mock
     private lateinit var commentLikeRepository: CommentLikeRepository
@@ -159,7 +163,7 @@ class CommentServiceFilteringTest {
         }
 
         assertThat(ex.errorCode).isEqualTo(CommentErrorCode.INAPPROPRIATE_CONTENT_WARN)
-        verify(commentRepository, never()).save(any())
+        verifyNoInteractions(commentLikeRepository)
     }
 
     @Test
@@ -174,7 +178,7 @@ class CommentServiceFilteringTest {
         }
 
         assertThat(ex.errorCode).isEqualTo(CommentErrorCode.INAPPROPRIATE_CONTENT_BLOCK)
-        verify(commentRepository, never()).save(any())
+        verifyNoInteractions(commentLikeRepository)
     }
 
     // ------------------------ EDIT (필터링) ------------------------
@@ -213,9 +217,12 @@ class CommentServiceFilteringTest {
         }
 
         assertThat(ex.errorCode).isEqualTo(CommentErrorCode.INAPPROPRIATE_CONTENT_WARN)
-        // WARN → 예외 후 like 조회 없음
-        verify(commentLikeRepository, never())
-            .existsByCommentAndUser(any(), any())
+
+
+        // ✅ 이렇게 "단독 호출"만 남겨
+        verifyNoInteractions(commentLikeRepository)
+
+        verifyNoInteractions(commentLikeService)
     }
 
     @Test
@@ -232,9 +239,14 @@ class CommentServiceFilteringTest {
         }
 
         assertThat(ex.errorCode).isEqualTo(CommentErrorCode.INAPPROPRIATE_CONTENT_BLOCK)
-        // BLOCK → 예외 후 like 조회 없음
-        verify(commentLikeRepository, never())
-            .existsByCommentAndUser(any(), any())
+
+        // ❌ 절대 이렇게 쓰면 안 됨:
+        // verify(commentLikeRepository, never())
+        //     .existsByCommentAndUser(any(), any())
+
+        // ✅ 이렇게만!
+        verifyNoInteractions(commentLikeRepository)
+        verifyNoInteractions(commentLikeService)
     }
 
     companion object {

@@ -7,6 +7,7 @@ import com.back.motionit.domain.challenge.comment.entity.Comment
 import com.back.motionit.domain.challenge.comment.moderation.CommentModeration
 import com.back.motionit.domain.challenge.comment.repository.CommentRepository
 import com.back.motionit.domain.challenge.like.repository.CommentLikeRepository
+import com.back.motionit.domain.challenge.like.service.CommentLikeService
 import com.back.motionit.domain.challenge.participant.entity.ChallengeParticipant
 import com.back.motionit.domain.challenge.room.entity.ChallengeRoom
 import com.back.motionit.domain.challenge.room.repository.ChallengeRoomRepository
@@ -49,6 +50,9 @@ class CommentServiceAuthenticationTest {
 
     @Mock
     lateinit var commentLikeRepository: CommentLikeRepository
+
+    @Mock
+    lateinit var commentLikeService: CommentLikeService   // ✅ 새로 추가된 서비스 모킹
 
     @Mock
     lateinit var commentModeration: CommentModeration
@@ -207,8 +211,8 @@ class CommentServiceAuthenticationTest {
             val page: Page<CommentRes> = commentService.list(ROOM_ID, USER_ID, 0, 20)
 
             assertThat(page.totalElements).isZero()
-            // 좋아요 조회는 아예 호출되지 않아야 함
-            Mockito.verifyNoInteractions(commentLikeRepository)
+            // 좋아요 조회는 아예 호출되지 않아야 함 → 이제 Service 기준
+            Mockito.verifyNoInteractions(commentLikeService)
         }
 
         @Test
@@ -238,8 +242,9 @@ class CommentServiceAuthenticationTest {
 
             val expectedIds = listOf(COMMENT_ID, COMMENT_ID + 1)
 
+            // (C) 실제 호출 인자와 정확히 일치하도록 스텁 → 이제 CommentLikeService 기준
             Mockito.`when`(
-                commentLikeRepository.findLikedCommentIdsSafely(
+                commentLikeService.findLikedCommentIdsSafely(
                     author,
                     expectedIds
                 )
@@ -249,10 +254,10 @@ class CommentServiceAuthenticationTest {
 
             assertThat(page.totalElements).isEqualTo(2)
 
-            Mockito.verify(commentLikeRepository, Mockito.times(1))
+            Mockito.verify(commentLikeService, Mockito.times(1))
                 .findLikedCommentIdsSafely(author, expectedIds)
 
-            // 선택: liked 플래그까지 검증하고 싶다면
+            // 선택: liked 플래그까지 검증
             assertThat(page.content[0].liked).isTrue()
             assertThat(page.content[1].liked).isFalse()
         }
