@@ -83,7 +83,7 @@ docker run -d \
   --restart unless-stopped \
   --network motionit-network \
   -p ${NEW_PORT}:8080 \
-  -v /home/ubuntu/application-prod.yml:/app/application-prod.yml:ro \
+  -v /home/ubuntu/aws_motionit_private_key.pem:/app/config/aws_motionit_private_key.pem:ro \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/application-prod.yml \
   -e DATABASE_URL="${DATABASE_URL}" \
@@ -94,7 +94,7 @@ docker run -d \
   -e AWS_S3_BUCKET_NAME="${AWS_S3_BUCKET_NAME}" \
   -e AWS_CLOUDFRONT_DOMAIN="${AWS_CLOUDFRONT_DOMAIN}" \
   -e AWS_CLOUDFRONT_KEY_ID="${AWS_CLOUDFRONT_KEY_ID}" \
-  -e AWS_CLOUDFRONT_PRIVATE_KEY_PATH="${AWS_CLOUDFRONT_PRIVATE_KEY_PATH}" \
+  -e AWS_CLOUDFRONT_PRIVATE_KEY_PATH="/app/config/aws_motionit_private_key.pem" \
   -e JWT_SECRET="${JWT_SECRET}" \
   -e JWT_ACCESS_TOKEN_EXPIRATION="${JWT_ACCESS_TOKEN_EXPIRATION}" \
   -e JWT_REFRESH_TOKEN_EXPIRATION="${JWT_REFRESH_TOKEN_EXPIRATION}" \
