@@ -15,6 +15,31 @@ GREEN_PORT=8081
 NGINX_CONF="/etc/nginx/sites-available/motionit"
 HEALTH_CHECK_ENDPOINT="/actuator/health"
 
+update_nginx_upstream() {
+  local NEW_PORT="$1"
+
+  echo -e "${YELLOW}[Nginx] Switching upstream to port ${NEW_PORT}...${NC}"
+
+  # 기존 포트(롤백용) 추출
+  local OLD_PORT
+  OLD_PORT=$(grep -oP 'server 127\.0\.0\.1:\K[0-9]+' "${NGINX_CONF}" | head -n1 || echo "")
+
+  # upstream 설정에서 포트 교체
+  sudo sed -i "s/server 127\.0\.0\.1:[0-9]\+;/server 127.0.0.1:${NEW_PORT};/" "${NGINX_CONF}"
+
+  if sudo nginx -t; then
+    sudo systemctl reload nginx
+    echo -e "${GREEN}[Nginx] Upstream switched to port ${NEW_PORT}${NC}"
+  else
+    echo -e "${RED}[Nginx] Config test failed. Rolling back to previous port...${NC}"
+    if [ -n "${OLD_PORT}" ]; then
+      sudo sed -i "s/server 127\.0\.0\.1:[0-9]\+;/server 127.0.0.1:${OLD_PORT};/" "${NGINX_CONF}"
+      sudo nginx -t && sudo systemctl reload nginx
+    fi
+    exit 1
+  fi
+}
+
 echo -e "${BLUE}=================================${NC}"
 echo -e "${BLUE}  Blue-Green Deployment${NC}"
 echo -e "${BLUE}=================================${NC}"
@@ -130,47 +155,13 @@ if [ $RETRY_COUNT -eq $MAX_RETRY ]; then
     exit 1
 fi
 
-echo -e "\n${YELLOW}[6/7] Switching Nginx to ${NEW_COLOR}...${NC}"
-
-sudo tee ${NGINX_CONF} > /dev/null <<EOF
-server {
-    listen 80;
-    server_name _;
-
-    location / {
-        proxy_pass http://localhost:${NEW_PORT};
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
-
-    location /actuator/health {
-        proxy_pass http://localhost:${NEW_PORT}/actuator/health;
-        access_log off;
-    }
-}
-EOF
+echo -e "\n${YELLOW}[6/7] Switching Nginx upstream to ${NEW_COLOR} (port ${NEW_PORT})...${NC}"
 
 if [ ! -L /etc/nginx/sites-enabled/motionit ]; then
     sudo ln -sf ${NGINX_CONF} /etc/nginx/sites-enabled/motionit
 fi
 
-if sudo nginx -t; then
-    sudo systemctl reload nginx
-    echo -e "${GREEN}Nginx switched to ${NEW_COLOR} (port ${NEW_PORT})${NC}"
-else
-    echo -e "${RED}Nginx configuration test failed${NC}"
-    exit 1
-fi
+update_nginx_upstream "${NEW_PORT}"
 
 if [ -n "$CURRENT_CONTAINER" ]; then
     echo -e "\n${YELLOW}[7/7] Stopping old ${CURRENT_COLOR} container...${NC}"
