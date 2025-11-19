@@ -129,10 +129,20 @@ val coverageExcludes = listOf(
     "**/*Application*",
     "**/config/**",
     "**/dto/**",
+    "**/api/**",
+    "**/constants/**",
+    "**/error/**",
+    "**/init/**",
     "**/exception/**",
     "**/vo/**",
     "**/Q*.*",                 // Querydsl 생성물
-    "**/*\$*Companion*.*"      // Kotlin 내부 생성물
+    "**/*\$*Companion*.*",      // Kotlin 내부 생성물
+
+    "**/*Repository.class",
+    "**/*Repository\$*.class",
+
+    // Querydsl 생성물
+    "**/Q*.*",
 )
 
 /** -----------------------------
