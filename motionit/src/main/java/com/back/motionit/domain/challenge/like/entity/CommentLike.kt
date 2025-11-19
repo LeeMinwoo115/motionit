@@ -15,10 +15,10 @@ import jakarta.persistence.*
 open class CommentLike(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "comment_id", nullable = false)
-    open var comment: Comment,
+    var comment: Comment,
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    open var user: User
+    var user: User
 ) : BaseEntity(){
     companion object {
         fun create(comment: Comment, user: User) = CommentLike(comment, user)
